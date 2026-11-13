@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y debootstrap xorriso syslinux-common
+          sudo apt install -y debootstrap xorriso syslinux
 
       - name: Build rootfs
         run: |
@@ -21,7 +21,7 @@ jobs:
           sudo mount --bind /dev /tmp/nr/dev
           sudo mount --bind /proc /tmp/nr/proc
           sudo mount --bind /sys /tmp/nr/sys
-          sudo chroot /tmp/nr /bin/bash -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ubuntu-desktop-minimal ubuntu-session firefox curl ca-certificates syslinux-common linux-image-generic initramfs-tools && echo newclier > /etc/hostname && apt-get clean && rm -rf /var/lib/apt/lists/*"
+          sudo chroot /tmp/nr /bin/bash -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ubuntu-desktop-minimal ubuntu-session firefox curl ca-certificates linux-image-generic initramfs-tools && echo newclier > /etc/hostname && apt-get clean && rm -rf /var/lib/apt/lists/*"
           sudo umount /tmp/nr/dev
           sudo umount /tmp/nr/proc
           sudo umount /tmp/nr/sys
@@ -31,11 +31,8 @@ jobs:
           sudo mkdir -p /tmp/nr/isolinux
           sudo cp /tmp/nr/boot/vmlinuz-* /tmp/nr/vmlinuz
           sudo cp /tmp/nr/boot/initrd.img-* /tmp/nr/initrd.img
-          ISOLINUX_BIN=$(find /usr/lib /usr/share -iname "isolinux.bin" 2>/dev/null | head -1)
-          MENU_C32=$(find /usr/lib /usr/share -name "menu.c32" 2>/dev/null | head -1)
-          if [ -z "$ISOLINUX_BIN" ]; then echo "ERROR: isolinux.bin not found"; exit 1; fi
-          sudo cp "$ISOLINUX_BIN" /tmp/nr/isolinux/isolinux.bin
-          sudo cp "$MENU_C32" /tmp/nr/isolinux/menu.c32
+          sudo cp /usr/lib/syslinux/bios/isolinux.bin /tmp/nr/isolinux/
+          sudo cp /usr/lib/syslinux/bios/menu.c32 /tmp/nr/isolinux/
           printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/nr/isolinux/isolinux.cfg > /dev/null
 
       - name: Make ISO
