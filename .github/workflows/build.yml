@@ -13,30 +13,31 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y debootstrap xorriso syslinux-utils
+          sudo apt install -y debootstrap xorriso syslinux-common
 
       - name: Build rootfs
         run: |
-          sudo debootstrap noble /tmp/newclier-root http://archive.ubuntu.com/ubuntu
-          sudo mount --bind /dev /tmp/newclier-root/dev
-          sudo mount --bind /proc /tmp/newclier-root/proc
-          sudo mount --bind /sys /tmp/newclier-root/sys
-          sudo chroot /tmp/newclier-root /bin/bash -c "apt update && apt install -y --no-install-recommends gnome-desktop-environment gnome-session firefox curl ca-certificates syslinux linux-image-generic initramfs-tools && echo newclier > /etc/hostname && apt clean && apt autoremove -y"
-          sudo umount /tmp/newclier-root/dev
-          sudo umount /tmp/newclier-root/proc
-          sudo umount /tmp/newclier-root/sys
+          sudo debootstrap noble /tmp/nr http://archive.ubuntu.com/ubuntu
+          sudo mount --bind /dev /tmp/nr/dev
+          sudo mount --bind /proc /tmp/nr/proc
+          sudo mount --bind /sys /tmp/nr/sys
+          sudo chroot /tmp/nr /bin/bash -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ubuntu-desktop-minimal ubuntu-session firefox curl ca-certificates syslinux-common linux-image-generic initramfs-tools && echo newclier > /etc/hostname && apt-get clean && rm -rf /var/lib/apt/lists/*"
+          sudo umount /tmp/nr/dev
+          sudo umount /tmp/nr/proc
+          sudo umount /tmp/nr/sys
 
-      - name: Prepare boot files
+      - name: Prepare boot
         run: |
-          sudo mkdir -p /tmp/newclier-root/isolinux
-          sudo cp /tmp/newclier-root/boot/vmlinuz-* /tmp/newclier-root/vmlinuz
-          sudo cp /tmp/newclier-root/boot/initrd.img-* /tmp/newclier-root/initrd.img
-          sudo cp /usr/lib/syslinux/bios/isolinux.bin /tmp/newclier-root/isolinux/
-          printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/newclier-root/isolinux/isolinux.cfg > /dev/null
+          sudo mkdir -p /tmp/nr/isolinux
+          sudo cp /tmp/nr/boot/vmlinuz-* /tmp/nr/vmlinuz
+          sudo cp /tmp/nr/boot/initrd.img-* /tmp/nr/initrd.img
+          sudo cp /usr/lib/syslinux/bios/isolinux.bin /tmp/nr/isolinux/
+          sudo cp /usr/lib/syslinux/bios/menu.c32 /tmp/nr/isolinux/
+          printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/nr/isolinux/isolinux.cfg > /dev/null
 
       - name: Make ISO
         run: |
-          sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso -R -J -V NEWCLIER -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table /tmp/newclier-root/
+          sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso -R -J -V NEWCLIER -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table /tmp/nr/
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
