@@ -13,43 +13,28 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y debootstrap xorriso genisoimage syslinux-utils
+          sudo apt install -y debootstrap xorriso syslinux-utils genisoimage
 
-      - name: Build custom Ubuntu with Win10 theme + Waydroid
+      - name: Build rootfs
         run: |
           sudo debootstrap noble /tmp/newclier-root http://archive.ubuntu.com/ubuntu
           sudo mount --bind /dev /tmp/newclier-root/dev
           sudo mount --bind /proc /tmp/newclier-root/proc
           sudo mount --bind /sys /tmp/newclier-root/sys
-          sudo chroot /tmp/newclier-root
-
-          # Base packages
-          apt update
-          apt install -y gnome-desktop-environment gnome-session wayland
-
-          # Waydroid (APK support)
-          apt install -y curl ca-certificates
-          curl -s https://repo.waydro.id | bash
-          apt install -y waydroid
-
-          # Windows 10 Theme
-          apt install -y git
-          git clone https://github.com/VSReviualWin10/WhiteSur-gtk-theme /tmp/theme
-          cp -r /tmp/theme /root/.themes/
-
-          # Set hostname
-          echo "newclier" > /etc/hostname
-
-          # Clean
-          apt clean
-          exit
-
-          # Unmount
+          sudo chroot /tmp/newclier-root /bin/bash -c "
+            apt update
+            apt install -y --no-install-recommends \
+              gnome-desktop-environment gnome-session \
+              firefox waydroid curl ca-certificates
+            echo 'newclier' > /etc/hostname
+            apt clean
+          "
           sudo umount /tmp/newclier-root/dev
           sudo umount /tmp/newclier-root/proc
           sudo umount /tmp/newclier-root/sys
 
-          # Make ISO
+      - name: Make ISO
+        run: |
           cd /tmp/newclier-root
           sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso \
             -b isolinux/isolinux.bin \
