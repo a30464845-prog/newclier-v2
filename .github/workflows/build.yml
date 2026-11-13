@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y debootstrap xorriso syslinux-utils genisoimage
+          sudo apt install -y debootstrap xorriso syslinux-utils
 
       - name: Build rootfs
         run: |
@@ -25,25 +25,46 @@ jobs:
             apt update
             apt install -y --no-install-recommends \
               gnome-desktop-environment gnome-session \
-              firefox waydroid curl ca-certificates
+              firefox waydroid curl ca-certificates \
+              syslinux linux-image-generic initramfs-tools
             echo 'newclier' > /etc/hostname
             apt clean
+            apt autoremove -y
           "
           sudo umount /tmp/newclier-root/dev
           sudo umount /tmp/newclier-root/proc
           sudo umount /tmp/newclier-root/sys
 
+      - name: Prepare boot files
+        run: |
+          sudo mkdir -p /tmp/newclier-root/isolinux
+          sudo cp /tmp/newclier-root/boot/vmlinuz-* /tmp/newclier-root/vmlinuz
+          sudo cp /tmp/newclier-root/boot/initrd.img-* /tmp/newclier-root/initrd.img
+          sudo cp /usr/lib/syslinux/bios/isolinux.bin /tmp/newclier-root/isolinux/
+          sudo tee /tmp/newclier-root/isolinux/isolinux.cfg > /dev/null << 'EOF'
+UI menu.c32
+DEFAULT linux
+PROMPT 0
+TIMEOUT 300
+MENU TITLE Newclier Linux v2.0
+LABEL linux
+  MENU LABEL Newclier Linux
+  KERNEL /vmlinuz
+  INITRD /initrd.img
+  APPEND initrd=/initrd.img root=/dev/sda auto
+EOF
+
       - name: Make ISO
         run: |
-          cd /tmp/newclier-root
           sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso \
+            -R -J -V "NEWCLIER" \
             -b isolinux/isolinux.bin \
             -c isolinux/boot.cat \
             -no-emul-boot \
             -boot-load-size 4 \
             -boot-info-table \
-            -V "NEWCLIER" \
-            .
+            -o "Newclier Linux v2" \
+            /tmp/newclier-root/
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
