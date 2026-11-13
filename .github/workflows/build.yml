@@ -26,7 +26,7 @@ jobs:
           sudo umount /tmp/nr/proc
           sudo umount /tmp/nr/sys
 
-            - name: Prepare boot
+      - name: Prepare boot
         run: |
           sudo mkdir -p /tmp/nr/isolinux
           sudo cp /tmp/nr/boot/vmlinuz-* /tmp/nr/vmlinuz
@@ -37,6 +37,7 @@ jobs:
           sudo cp "$ISOLINUX_BIN" /tmp/nr/isolinux/isolinux.bin
           sudo cp "$MENU_C32" /tmp/nr/isolinux/menu.c32
           printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/nr/isolinux/isolinux.cfg > /dev/null
+
       - name: Make ISO
         run: |
           sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso -R -J -V NEWCLIER -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table /tmp/nr/
