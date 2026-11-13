@@ -13,70 +13,55 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential bc bison flex bzip2 cpio device-tree-compiler diffutils file gawk gcc git libssl-dev patch rsync swig xz-utils
+          sudo apt install -y debootstrap xorriso genisoimage syslinux-utils
 
-      - name: Download Buildroot
+      - name: Build custom Ubuntu with Win10 theme + Waydroid
         run: |
-          curl -L --retry 10 --retry-delay 30 --max-time 600 -o buildroot-2026.08.tar.xz https://buildroot.org/downloads/buildroot-2026.08.tar.xz
-          ls -la buildroot-2026.08.tar.xz
+          sudo debootstrap noble /tmp/newclier-root http://archive.ubuntu.com/ubuntu
+          sudo mount --bind /dev /tmp/newclier-root/dev
+          sudo mount --bind /proc /tmp/newclier-root/proc
+          sudo mount --bind /sys /tmp/newclier-root/sys
+          sudo chroot /tmp/newclier-root
 
-      - name: Build
-        run: |
-          tar -xf buildroot-2026.08.tar.xz
-          cd buildroot-2026.08
-          cp ../.config .config
-          mkdir -p linux
-          cp ../linux/config.fragment linux/
-          make oldconfig
-          make -j4
+          # Base packages
+          apt update
+          apt install -y gnome-desktop-environment gnome-session wayland
+
+          # Waydroid (APK support)
+          apt install -y curl ca-certificates
+          curl -s https://repo.waydro.id | bash
+          apt install -y waydroid
+
+          # Windows 10 Theme
+          apt install -y git
+          git clone https://github.com/VSReviualWin10/WhiteSur-gtk-theme /tmp/theme
+          cp -r /tmp/theme /root/.themes/
+
+          # Set hostname
+          echo "newclier" > /etc/hostname
+
+          # Clean
+          apt clean
+          exit
+
+          # Unmount
+          sudo umount /tmp/newclier-root/dev
+          sudo umount /tmp/newclier-root/proc
+          sudo umount /tmp/newclier-root/sys
+
+          # Make ISO
+          cd /tmp/newclier-root
+          sudo xorriso -as mkisofs -o /tmp/newclier-v2.iso \
+            -b isolinux/isolinux.bin \
+            -c isolinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -V "NEWCLIER" \
+            .
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
           name: newclier-v2
-          path: |
-            buildroot-2026.08/output/images/bzImage
-            buildroot-2026.08/output/images/rootfs.ext2
-            buildroot-2026.08/output/images/rootfs.iso9660
-ENDOOFILE
-cat > .github/workflows/build.yml << 'ENDOFFILE'
-name: Build Newclier v2
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential bc bison flex bzip2 cpio device-tree-compiler diffutils file gawk gcc git libssl-dev patch rsync swig xz-utils
-
-      - name: Download Buildroot
-        run: |
-          curl -L --retry 10 --retry-delay 30 --max-time 600 -o buildroot-2026.08.tar.xz https://buildroot.org/downloads/buildroot-2026.08.tar.xz
-          ls -la buildroot-2026.08.tar.xz
-
-      - name: Build
-        run: |
-          tar -xf buildroot-2026.08.tar.xz
-          cd buildroot-2026.08
-          cp ../.config .config
-          mkdir -p linux
-          cp ../linux/config.fragment linux/
-          make oldconfig
-          make -j4
-
-      - name: Upload ISO
-        uses: actions/upload-artifact@v4
-        with:
-          name: newclier-v2
-          path: |
-            buildroot-2026.08/output/images/bzImage
-            buildroot-2026.08/output/images/rootfs.ext2
-            buildroot-2026.08/output/images/rootfs.iso9660
+          path: /tmp/newclier-v2.iso   
