@@ -1,0 +1,82 @@
+name: Build Newclier v2
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bc bison flex bzip2 cpio device-tree-compiler diffutils file gawk gcc git libssl-dev patch rsync swig xz-utils
+
+      - name: Download Buildroot
+        run: |
+          curl -L --retry 10 --retry-delay 30 --max-time 600 -o buildroot-2026.08.tar.xz https://buildroot.org/downloads/buildroot-2026.08.tar.xz
+          ls -la buildroot-2026.08.tar.xz
+
+      - name: Build
+        run: |
+          tar -xf buildroot-2026.08.tar.xz
+          cd buildroot-2026.08
+          cp ../.config .config
+          mkdir -p linux
+          cp ../linux/config.fragment linux/
+          make oldconfig
+          make -j4
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: newclier-v2
+          path: |
+            buildroot-2026.08/output/images/bzImage
+            buildroot-2026.08/output/images/rootfs.ext2
+            buildroot-2026.08/output/images/rootfs.iso9660
+ENDOOFILE
+cat > .github/workflows/build.yml << 'ENDOFFILE'
+name: Build Newclier v2
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bc bison flex bzip2 cpio device-tree-compiler diffutils file gawk gcc git libssl-dev patch rsync swig xz-utils
+
+      - name: Download Buildroot
+        run: |
+          curl -L --retry 10 --retry-delay 30 --max-time 600 -o buildroot-2026.08.tar.xz https://buildroot.org/downloads/buildroot-2026.08.tar.xz
+          ls -la buildroot-2026.08.tar.xz
+
+      - name: Build
+        run: |
+          tar -xf buildroot-2026.08.tar.xz
+          cd buildroot-2026.08
+          cp ../.config .config
+          mkdir -p linux
+          cp ../linux/config.fragment linux/
+          make oldconfig
+          make -j4
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: newclier-v2
+          path: |
+            buildroot-2026.08/output/images/bzImage
+            buildroot-2026.08/output/images/rootfs.ext2
+            buildroot-2026.08/output/images/rootfs.iso9660
