@@ -13,10 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y debootstrap xorriso syslinux
-          echo "=== isolinux.bin location ==="
-          find / -name "isolinux.bin" 2>/dev/null
-          find / -name "menu.c32" 2>/dev/null
+          sudo apt install -y debootstrap xorriso syslinux isolinux
 
       - name: Build rootfs
         run: |
@@ -34,14 +31,9 @@ jobs:
           sudo mkdir -p /tmp/nr/isolinux
           sudo cp /tmp/nr/boot/vmlinuz-* /tmp/nr/vmlinuz
           sudo cp /tmp/nr/boot/initrd.img-* /tmp/nr/initrd.img
-          ISOLINUX_BIN=$(find / -name "isolinux.bin" 2>/dev/null | head -1)
-          MENU_C32=$(find / -name "menu.c32" 2>/dev/null | head -1)
-          echo "isolinux.bin found at: $ISOLINUX_BIN"
-          echo "menu.c32 found at: $MENU_C32"
-          if [ -z "$ISOLINUX_BIN" ]; then echo "FATAL: isolinux.bin not found anywhere"; exit 1; fi
-          if [ -z "$MENU_C32" ]; then echo "FATAL: menu.c32 not found anywhere"; exit 1; fi
-          sudo cp "$ISOLINUX_BIN" /tmp/nr/isolinux/isolinux.bin
-          sudo cp "$MENU_C32" /tmp/nr/isolinux/menu.c32
+          sudo cp /usr/lib/ISOLINUX/isolinux.bin /tmp/nr/isolinux/
+          sudo cp /usr/lib/syslinux/modules/bios/menu.c32 /tmp/nr/isolinux/
+          sudo cp /usr/lib/syslinux/modules/bios/ldlinux.c32 /tmp/nr/isolinux/
           printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/nr/isolinux/isolinux.cfg > /dev/null
 
       - name: Make ISO
