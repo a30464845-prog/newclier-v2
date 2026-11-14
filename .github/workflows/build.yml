@@ -32,8 +32,7 @@ jobs:
           sudo cp /tmp/nr/boot/vmlinuz-* /tmp/nr/vmlinuz
           sudo cp /tmp/nr/boot/initrd.img-* /tmp/nr/initrd.img
           sudo cp /usr/lib/ISOLINUX/isolinux.bin /tmp/nr/isolinux/
-          sudo cp /usr/lib/syslinux/modules/bios/menu.c32 /tmp/nr/isolinux/
-          sudo cp /usr/lib/syslinux/modules/bios/ldlinux.c32 /tmp/nr/isolinux/
+          sudo cp /usr/lib/syslinux/modules/bios/*.c32 /tmp/nr/isolinux/
           printf 'UI menu.c32\nDEFAULT linux\nPROMPT 0\nTIMEOUT 300\nMENU TITLE Newclier Linux v2.0\nLABEL linux\n  MENU LABEL Newclier Linux v2\n  KERNEL /vmlinuz\n  INITRD /initrd.img\n  APPEND initrd=/initrd.img root=/dev/sda auto\n' | sudo tee /tmp/nr/isolinux/isolinux.cfg > /dev/null
 
       - name: Make ISO
